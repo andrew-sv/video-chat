@@ -1,0 +1,81 @@
+@import "tailwindcss";
+
+:root {
+  --background: #0b0d12;
+  --foreground: #e8eaf0;
+  --surface: #161a22;
+  --surface-2: #1f2430;
+  --border: #2a3040;
+  --muted: #9aa3b5;
+  --accent: #3b82f6;
+  --danger: #ef4444;
+  --hand: #f59e0b;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-border: var(--border);
+  --color-muted: var(--muted);
+  --color-accent: var(--accent);
+  --color-danger: var(--danger);
+  --color-hand: var(--hand);
+  --font-sans: var(--font-geist-sans);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-geist-sans), system-ui, sans-serif;
+}
+
+.pb-safe {
+  padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
+}
+
+/* Call control buttons (applied to LiveKit's TrackToggle and our own). */
+.ctrl {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 3rem;
+  height: 3rem;
+  padding: 0;
+  border-radius: 9999px;
+  background: var(--surface-2);
+  color: var(--foreground);
+  transition: filter 0.15s;
+}
+.ctrl:hover {
+  filter: brightness(1.2);
+}
+.ctrl:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+/* LiveKit marks toggles as enabled/disabled; a muted mic/camera is red,
+   an active screen share is highlighted. */
+.ctrl[data-lk-source="microphone"][data-lk-enabled="false"],
+.ctrl[data-lk-source="camera"][data-lk-enabled="false"] {
+  background: var(--danger);
+  color: white;
+}
+.ctrl[data-lk-source="screen_share"][data-lk-enabled="true"] {
+  background: var(--accent);
+  color: white;
+}
+@media (max-width: 380px) {
+  .ctrl {
+    width: 2.6rem;
+    height: 2.6rem;
+  }
+}
+
+/* LiveKit only shows the avatar placeholder for a *muted* camera. Also show it
+   when there's no video element at all: camera never published, or not
+   received because of audio-only mode. */
+.lk-participant-tile[data-lk-source="camera"]:not(:has(video)) .lk-participant-placeholder {
+  opacity: 1;
+}

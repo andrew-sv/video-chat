@@ -1,0 +1,53 @@
+# Production SFU node config (template: render with envsubst per region/node). One of these runs per media server; all nodes in
+# a region share Redis, which is how rooms are routed to nodes and how a
+# participant on any node reaches the room. See ARCHITECTURE.md.
+port: 7880
+bind_addresses: [""]
+log_level: info
+region: ${REGION}                    # this node's region, e.g. us-east
+
+redis:
+  address: ${REDIS_ADDRESS}          # e.g. regional Redis cluster endpoint
+  use_tls: true
+
+rtc:
+  # Media is UDP first. TCP and TURN/TLS are fallbacks for networks that block
+  # UDP (corporate firewalls, some mobile carriers, hotel wifi).
+  udp_port: 7882                     # single-port UDP mux: one port to open per node
+  tcp_port: 7881
+  use_external_ip: true
+  # Congestion control is what keeps audio clear: the SFU estimates each
+  # subscriber's downlink and drops video layers (then pauses video) before
+  # audio is ever affected.
+  congestion_control:
+    enabled: true
+    allow_pause: true                # pause video entirely rather than stall audio
+
+turn:
+  enabled: true
+  domain: ${TURN_DOMAIN}             # e.g. turn.example.com, per-region
+  tls_port: 5349                     # put behind L4 LB on :443 so it looks like HTTPS
+  udp_port: 3478
+  external_tls: true
+
+room:
+  max_participants: 50               # product limit, enforced server-side
+  empty_timeout: 300
+  departure_timeout: 20              # keep room alive briefly if the last person drops
+
+limit:
+  # Stop placing new rooms on a node before it saturates; the router picks
+  # another node in the region instead.
+  num_tracks: 12000
+  bytes_per_sec: 1_500_000_000       # ~12 Gbps on a 25 Gbps NIC, leaves headroom
+
+node_selector:
+  kind: regionaware                  # new rooms go to the nearest region with capacity
+  sysload_limit: 0.7
+  regions:                           # one entry per deployed region
+    - name: ${REGION}
+      lat: ${REGION_LAT}
+      lon: ${REGION_LON}
+
+keys:
+  ${LIVEKIT_API_KEY}: ${LIVEKIT_API_SECRET}
